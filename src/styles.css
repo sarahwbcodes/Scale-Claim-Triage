@@ -142,11 +142,39 @@ button { font-family: inherit; cursor: pointer; }
 }
 .main-toolbar {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 12px 24px;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border);
 }
+.toolbar-tabs { display: flex; gap: 4px; }
+
+.user-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.user-name { color: var(--text); font-weight: 500; }
+.user-sep { color: var(--border-strong); margin: 0 2px; }
+.user-role { color: var(--text-muted); font-weight: 400; }
 .tab {
   padding: 8px 14px;
   background: transparent;
@@ -325,7 +353,13 @@ button { font-family: inherit; cursor: pointer; }
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
+  margin: 0 0 6px 0;
+}
+.assessment-meta {
+  font-size: 11px;
+  color: var(--text-muted);
   margin: 0 0 16px 0;
+  line-height: 1.5;
 }
 .field { margin-bottom: 14px; }
 .field-label {
@@ -444,6 +478,16 @@ button { font-family: inherit; cursor: pointer; }
   background: white;
 }
 .modal-field textarea { resize: vertical; min-height: 80px; }
+.modal-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 8px 0 16px 0;
+  line-height: 1.5;
+}
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -488,6 +532,15 @@ button { font-family: inherit; cursor: pointer; }
 }
 .action-Accepted   { background: #DCFCE7; color: #166534; }
 .action-Overridden { background: #FEE2E2; color: #991B1B; }
+
+.reason-cell { display: flex; flex-direction: column; gap: 2px; }
+.reason-primary { color: var(--text); font-weight: 500; }
+.reason-context {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  line-height: 1.4;
+}
 
 .truncate {
   max-width: 280px;
