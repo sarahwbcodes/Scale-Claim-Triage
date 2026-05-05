@@ -19,10 +19,10 @@ cd claims-triage-prototype
 npm install
 npm run dev
 ```
-Also hosted on vercel 
 
 Open the URL printed in the terminal (typically `http://localhost:3000` or `http://localhost:5173`).
 
+Also can be tested on Vercel: scale-claim-triage.vercel.app
 ## Sample claims
 
 Three claims are pre-loaded to exercise the three routing outcomes:
