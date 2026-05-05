@@ -123,10 +123,15 @@ function ClaimDetail({ claim, resolved, confirmation, onAccept, onOverride, onVi
 
       <div className={`banner ${bannerCls}`}>
         <span className={`dot ${bannerCls}`} />
-        <span>
-          <span className="banner-title">{claim.bannerTitle}:</span>{' '}
-          <span className="banner-rationale">{claim.rationale}</span>
-        </span>
+        <div className="banner-body">
+          <div>
+            <span className="banner-title">{claim.bannerTitle}:</span>{' '}
+            <span className="banner-rationale">{claim.rationale}</span>
+          </div>
+          {claim.secondaryRationale && (
+            <div className="banner-secondary">{claim.secondaryRationale}</div>
+          )}
+        </div>
       </div>
 
       {confirmation && (
@@ -141,9 +146,17 @@ function ClaimDetail({ claim, resolved, confirmation, onAccept, onOverride, onVi
         <div>
           <ImgWithFallback src={claim.photo} fallback={FALLBACK_LG} className="photo-main" />
           <div className="photo-thumbs">
-            {claim.thumbs.map((t, i) => (
-              <ImgWithFallback key={i} src={t} fallback={FALLBACK_SM} className="photo-thumb" />
-            ))}
+            {Array.from({ length: claim.expectedAngles ?? claim.thumbs.length }).map((_, i) => {
+              const t = claim.thumbs[i];
+              if (t) {
+                return <ImgWithFallback key={i} src={t} fallback={FALLBACK_SM} className="photo-thumb" />;
+              }
+              return (
+                <div key={i} className="photo-thumb missing">
+                  <span>Angle not provided</span>
+                </div>
+              );
+            })}
           </div>
         </div>
         <div className="card">

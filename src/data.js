@@ -2,12 +2,21 @@ export const FALLBACK_LG = 'https://placehold.co/800x600/E5E7EB/6B7280?text=Dama
 export const FALLBACK_SM = 'https://placehold.co/200x150/E5E7EB/6B7280?text=Angle';
 
 const IMG = {
-  bumper:  'https://images.unsplash.com/photo-1597007030739-6d2e7172ee0a?w=800&auto=format&fit=crop',
-  bumper2: 'https://images.unsplash.com/photo-1605618826115-fb9e0eb5c5d6?w=400&auto=format&fit=crop',
-  bumper3: 'https://images.unsplash.com/photo-1632823469850-2f77dd9c7d93?w=400&auto=format&fit=crop',
-  bumper4: 'https://images.unsplash.com/photo-1583349562384-ad525c8c2860?w=400&auto=format&fit=crop',
-  scratch: 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?w=800&auto=format&fit=crop',
-  side:    'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=800&auto=format&fit=crop',
+  // CLM-001: front-end collision damage
+  frontHero:    'https://images.unsplash.com/photo-1605773912303-69b3c5f4ec83?w=900&auto=format&fit=crop&q=80',
+  frontAngleA:  'https://images.unsplash.com/photo-1597007030739-6d2e7172ee0a?w=400&auto=format&fit=crop&q=80',
+  frontAngleB:  'https://images.unsplash.com/photo-1632823469850-2f77dd9c7d93?w=400&auto=format&fit=crop&q=80',
+  frontAngleC:  'https://images.unsplash.com/photo-1583349562384-ad525c8c2860?w=400&auto=format&fit=crop&q=80',
+
+  // CLM-002: minor cosmetic scratches
+  minorHero:    'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?w=900&auto=format&fit=crop&q=80',
+  minorAngleA:  'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=400&auto=format&fit=crop&q=80',
+  minorAngleB:  'https://images.unsplash.com/photo-1605618826115-fb9e0eb5c5d6?w=400&auto=format&fit=crop&q=80',
+  minorAngleC:  'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=400&auto=format&fit=crop&q=80',
+
+  // CLM-003: side panel / door damage (partial coverage)
+  sideHero:     'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=900&auto=format&fit=crop&q=80',
+  sideAngleA:   'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=400&auto=format&fit=crop&q=80',
 };
 
 export const claims = [
@@ -18,9 +27,10 @@ export const claims = [
     value: '$4,200',
     routing: 'agent',
     bannerTitle: 'Routed to agent review',
-    rationale: 'Severity confidence 73% — below 80% auto-resolve threshold.',
-    photo: IMG.bumper,
-    thumbs: [IMG.bumper2, IMG.bumper3, IMG.bumper4],
+    rationale: 'Severity confidence 73% — damage is genuinely ambiguous between moderate and severe.',
+    photo: IMG.frontHero,
+    thumbs: [IMG.frontAngleA, IMG.frontAngleB, IMG.frontAngleC],
+    expectedAngles: 3,
     damageType: 'Front bumper, hood',
     panels: ['Front bumper', 'Hood', 'Right headlight assembly'],
     severity: 'Moderate',
@@ -37,8 +47,9 @@ export const claims = [
     routing: 'auto',
     bannerTitle: 'Auto-resolved',
     rationale: 'All confidence signals above threshold. Approved without review.',
-    photo: IMG.scratch,
-    thumbs: [IMG.bumper2, IMG.bumper4, IMG.bumper3],
+    photo: IMG.minorHero,
+    thumbs: [IMG.minorAngleA, IMG.minorAngleB, IMG.minorAngleC],
+    expectedAngles: 3,
     damageType: 'Rear quarter panel scratch',
     panels: ['Rear quarter panel (left)'],
     severity: 'Minor',
@@ -55,15 +66,18 @@ export const claims = [
     routing: 'senior',
     bannerTitle: 'Escalated — fraud signal detected',
     rationale: 'Damage pattern inconsistent with reported incident. Flagged for senior adjuster review.',
-    photo: IMG.side,
-    thumbs: [IMG.bumper3, IMG.bumper2, IMG.bumper4],
+    secondaryRationale:
+      'Limited photo coverage (2/4 angles) contributed to fraud flag — system requires additional documentation for high-value claims.',
+    photo: IMG.sideHero,
+    thumbs: [IMG.sideAngleA],
+    expectedAngles: 3,
     damageType: 'Driver-side door, side panel',
     panels: ['Driver door', 'Front fender (left)', 'Rocker panel'],
     severity: 'Severe',
     repairLow: 9200,
     repairHigh: 12400,
-    confidence: { damage: 89, panel: 84, severity: 78, cost: 70 },
-    overallConf: 80,
+    confidence: { damage: 89, panel: 64, severity: 78, cost: 70 },
+    overallConf: 75,
   },
 ];
 
