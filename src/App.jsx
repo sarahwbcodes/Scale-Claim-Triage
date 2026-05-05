@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { claims, auditLog, routingGroups, FALLBACK_LG, FALLBACK_SM } from './data.js';
+import { claims, initialAuditLog, routingGroups, FALLBACK_LG, FALLBACK_SM } from './data.js';
+
+const AGENT_NAME = 'Sarah Chen';
 
 function ImgWithFallback({ src, fallback, className, alt = '' }) {
   const onError = (e) => {
@@ -14,7 +16,16 @@ function confClass(v) {
   return 'conf-low';
 }
 
-function Sidebar({ selectedId, onSelect }) {
+function formatTimestamp(d = new Date()) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function modelOutputFor(claim) {
+  return `Severity: ${claim.severity}, $${claim.repairLow.toLocaleString()}-$${claim.repairHigh.toLocaleString()}`;
+}
+
+function Sidebar({ selectedId, resolvedClaims, onSelect }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -32,20 +43,32 @@ function Sidebar({ selectedId, onSelect }) {
               {items.length === 0 ? (
                 <div className="claim-item empty">No claims</div>
               ) : (
-                items.map((c) => (
-                  <div
-                    key={c.id}
-                    className={`claim-item${c.id === selectedId ? ' selected' : ''}`}
-                    onClick={() => onSelect(c.id)}
-                  >
-                    <ImgWithFallback src={c.thumbs[0]} fallback={FALLBACK_SM} className="claim-thumb" />
-                    <div className="claim-meta">
-                      <div className="claim-id">{c.id}</div>
-                      <div className="claim-name">{c.name}</div>
-                      <div className="claim-conf">Confidence: {c.overallConf}%</div>
+                items.map((c) => {
+                  const resolved = resolvedClaims.has(c.id);
+                  return (
+                    <div
+                      key={c.id}
+                      className={[
+                        'claim-item',
+                        c.id === selectedId ? 'selected' : '',
+                        resolved ? 'resolved' : '',
+                      ].filter(Boolean).join(' ')}
+                      onClick={() => onSelect(c.id)}
+                    >
+                      <ImgWithFallback src={c.thumbs[0]} fallback={FALLBACK_SM} className="claim-thumb" />
+                      <div className="claim-meta">
+                        <div className="claim-id">
+                          {c.id}
+                          {resolved && <span className="resolved-check" aria-label="Resolved">✓</span>}
+                        </div>
+                        <div className="claim-name">{c.name}</div>
+                        <div className="claim-conf">
+                          {resolved ? 'Resolved' : `Confidence: ${c.overallConf}%`}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           );
@@ -80,7 +103,7 @@ function ConfidenceBars({ confidence }) {
   );
 }
 
-function ClaimDetail({ claim, onAccept, onOverride }) {
+function ClaimDetail({ claim, resolved, confirmation, onAccept, onOverride, onViewAuditLog }) {
   const bannerCls =
     claim.routing === 'auto' ? 'green' : claim.routing === 'senior' ? 'red' : 'orange';
 
@@ -105,6 +128,14 @@ function ClaimDetail({ claim, onAccept, onOverride }) {
           <span className="banner-rationale">{claim.rationale}</span>
         </span>
       </div>
+
+      {confirmation && (
+        <div className="confirmation-banner">
+          <span className="confirmation-check">✓</span>
+          <span>{confirmation}</span>
+          <button className="confirmation-link" onClick={onViewAuditLog}>View Audit Log</button>
+        </div>
+      )}
 
       <div className="columns">
         <div>
@@ -142,14 +173,18 @@ function ClaimDetail({ claim, onAccept, onOverride }) {
       </div>
 
       <div className="action-bar">
-        <button className="btn btn-primary" onClick={onAccept}>Accept Recommendation</button>
-        <button className="btn btn-secondary" onClick={onOverride}>Override</button>
+        <button className="btn btn-primary" onClick={onAccept} disabled={resolved}>
+          {resolved ? 'Decision Recorded' : 'Accept Recommendation'}
+        </button>
+        <button className="btn btn-secondary" onClick={onOverride} disabled={resolved}>
+          Override
+        </button>
       </div>
     </>
   );
 }
 
-function AuditLogView() {
+function AuditLogView({ entries }) {
   return (
     <>
       <h1 style={{ fontSize: 22, fontWeight: 600, margin: '0 0 4px 0' }}>Audit Log</h1>
@@ -164,10 +199,11 @@ function AuditLogView() {
             <th>Model Output</th>
             <th>Agent Action</th>
             <th>Reason</th>
+            <th>Agent</th>
           </tr>
         </thead>
         <tbody>
-          {auditLog.map((r, i) => (
+          {entries.map((r, i) => (
             <tr key={i}>
               <td style={{ whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>{r.ts}</td>
               <td style={{ fontWeight: 500 }}>{r.id}</td>
@@ -178,6 +214,7 @@ function AuditLogView() {
                 <span className={`action-pill action-${r.action}`}>{r.action}</span>
               </td>
               <td style={{ color: 'var(--text-muted)' }}>{r.reason || '—'}</td>
+              <td>{r.agent || '—'}</td>
             </tr>
           ))}
         </tbody>
@@ -237,33 +274,55 @@ function OverrideModal({ open, onCancel, onSubmit }) {
   );
 }
 
-function Toast({ message }) {
-  return <div className={`toast${message ? ' show' : ''}`}>{message}</div>;
-}
-
 export default function App() {
   const [selectedId, setSelectedId] = useState('CLM-2024-001');
   const [view, setView] = useState('dashboard');
   const [modalOpen, setModalOpen] = useState(false);
-  const [toast, setToast] = useState('');
-  const toastTimer = useRef(null);
+  const [auditEntries, setAuditEntries] = useState(initialAuditLog);
+  const [resolvedClaims, setResolvedClaims] = useState(new Set());
+  const [confirmation, setConfirmation] = useState('');
+  const confirmationTimer = useRef(null);
 
   const claim = claims.find((c) => c.id === selectedId);
+  const isResolved = resolvedClaims.has(selectedId);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(''), 2200);
+  const showConfirmation = (msg) => {
+    setConfirmation(msg);
+    clearTimeout(confirmationTimer.current);
+    confirmationTimer.current = setTimeout(() => setConfirmation(''), 5000);
+  };
+
+  const recordDecision = (action, reason = '') => {
+    const entry = {
+      ts: formatTimestamp(),
+      id: claim.id,
+      output: modelOutputFor(claim),
+      action,
+      reason,
+      agent: AGENT_NAME,
+    };
+    setAuditEntries((prev) => [entry, ...prev]);
+    setResolvedClaims((prev) => {
+      const next = new Set(prev);
+      next.add(claim.id);
+      return next;
+    });
+    showConfirmation('Decision recorded — see Audit Log');
   };
 
   const handleSelect = (id) => {
     setSelectedId(id);
     setView('dashboard');
+    setConfirmation('');
   };
 
   return (
     <div className="app">
-      <Sidebar selectedId={selectedId} onSelect={handleSelect} />
+      <Sidebar
+        selectedId={selectedId}
+        resolvedClaims={resolvedClaims}
+        onSelect={handleSelect}
+      />
       <main className="main">
         <div className="main-toolbar">
           <button
@@ -277,17 +336,23 @@ export default function App() {
             onClick={() => setView('audit')}
           >
             Audit Log
+            {auditEntries.length !== initialAuditLog.length && (
+              <span className="tab-badge">{auditEntries.length - initialAuditLog.length}</span>
+            )}
           </button>
         </div>
         <div className="main-content">
           {view === 'dashboard' ? (
             <ClaimDetail
               claim={claim}
-              onAccept={() => showToast(`Accepted recommendation for ${claim.id}`)}
+              resolved={isResolved}
+              confirmation={confirmation}
+              onAccept={() => recordDecision('Accepted')}
               onOverride={() => setModalOpen(true)}
+              onViewAuditLog={() => setView('audit')}
             />
           ) : (
-            <AuditLogView />
+            <AuditLogView entries={auditEntries} />
           )}
         </div>
       </main>
@@ -297,11 +362,9 @@ export default function App() {
         onCancel={() => setModalOpen(false)}
         onSubmit={(reason) => {
           setModalOpen(false);
-          showToast(`Override submitted: ${reason}`);
+          recordDecision('Overridden', reason);
         }}
       />
-
-      <Toast message={toast} />
     </div>
   );
 }

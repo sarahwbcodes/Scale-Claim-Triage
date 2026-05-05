@@ -67,13 +67,13 @@ export const claims = [
   },
 ];
 
-export const auditLog = [
-  { ts: '2026-05-04 14:32', id: 'CLM-2024-098', output: 'Severity: Moderate, $3,400-$4,100', action: 'Accepted', reason: '' },
-  { ts: '2026-05-04 13:15', id: 'CLM-2024-097', output: 'Severity: Minor, $620-$840', action: 'Overridden', reason: 'Model missed damage' },
-  { ts: '2026-05-04 11:48', id: 'CLM-2024-096', output: 'Severity: Severe, $8,800-$10,200', action: 'Accepted', reason: '' },
-  { ts: '2026-05-03 16:21', id: 'CLM-2024-095', output: 'Severity: Moderate, $2,900-$3,500', action: 'Overridden', reason: 'Severity wrong' },
-  { ts: '2026-05-03 10:04', id: 'CLM-2024-094', output: 'Severity: Minor, $410-$580', action: 'Accepted', reason: '' },
-  { ts: '2026-05-02 17:55', id: 'CLM-2024-093', output: 'Severity: Moderate, $5,100-$5,900', action: 'Overridden', reason: 'Cost estimate off' },
+export const initialAuditLog = [
+  { ts: '2026-05-04 14:32', id: 'CLM-2024-098', output: 'Severity: Moderate, $3,400-$4,100', action: 'Accepted',   reason: '',                    agent: 'Sarah Chen' },
+  { ts: '2026-05-04 13:15', id: 'CLM-2024-097', output: 'Severity: Minor, $620-$840',        action: 'Overridden', reason: 'Model missed damage', agent: 'Sarah Chen' },
+  { ts: '2026-05-04 11:48', id: 'CLM-2024-096', output: 'Severity: Severe, $8,800-$10,200',  action: 'Accepted',   reason: '',                    agent: 'Marcus Lee' },
+  { ts: '2026-05-03 16:21', id: 'CLM-2024-095', output: 'Severity: Moderate, $2,900-$3,500', action: 'Overridden', reason: 'Severity wrong',      agent: 'Sarah Chen' },
+  { ts: '2026-05-03 10:04', id: 'CLM-2024-094', output: 'Severity: Minor, $410-$580',        action: 'Accepted',   reason: '',                    agent: 'Marcus Lee' },
+  { ts: '2026-05-02 17:55', id: 'CLM-2024-093', output: 'Severity: Moderate, $5,100-$5,900', action: 'Overridden', reason: 'Cost estimate off',   agent: 'Sarah Chen' },
 ];
 
 export const routingGroups = [
