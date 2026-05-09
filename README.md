@@ -1,4 +1,4 @@
-# Claims Triage System — Prototype
+# Claims Triage System: Prototype
 
 Claims agent dashboard for an AI-powered auto insurance claims triage system. Built as part of an AI Product Manager take-home exercise. The full product reasoning, prioritization, and AI integration approach are documented in the accompanying PRD.
 
@@ -22,6 +22,7 @@ npm run dev
 
 Open the URL printed in the terminal (typically `http://localhost:3000` or `http://localhost:5173`).
 
+Also can be tested on Vercel: scale-claim-triage.vercel.app
 ## Sample claims
 
 Three claims are pre-loaded to exercise the three routing outcomes:
@@ -36,4 +37,4 @@ Model responses are mocked. The hardcoded outputs match the JSON schema a produc
 
 ## What's not built
 
-The brief excluded customer intake and final inspection. Beyond that, the prototype deliberately omits the customer-facing transparency portal, multi-tenant configuration UI, mobile policyholder app, and live VLM integration — all P2 in the PRD or out of scope by design.
+The brief excluded customer intake and final inspection. Beyond that, the prototype deliberately omits the customer-facing transparency portal, multi-tenant configuration UI, mobile policyholder app, and live VLM integration; all P2 in the PRD or out of scope by design.
