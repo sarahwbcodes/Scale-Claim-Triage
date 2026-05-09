@@ -205,12 +205,26 @@ function ClaimDetail({ claim, resolved, confirmation, onAccept, onOverride, onVi
       </div>
 
       <div className="action-bar">
-        <button className="btn btn-primary" onClick={onAccept} disabled={resolved}>
-          {resolved ? 'Decision Recorded' : 'Accept Recommendation'}
-        </button>
-        <button className="btn btn-secondary" onClick={onOverride} disabled={resolved}>
-          Override
-        </button>
+        {claim.routing === 'auto' && (
+          <span className="status-pill status-auto">
+            ✓ Auto-resolved — no agent action required
+          </span>
+        )}
+        {claim.routing === 'senior' && (
+          <span className="status-pill status-senior">
+            Pending senior adjuster review — outside claims agent scope
+          </span>
+        )}
+        {claim.routing === 'agent' && (
+          <>
+            <button className="btn btn-primary" onClick={onAccept} disabled={resolved}>
+              {resolved ? 'Decision Recorded' : 'Accept Recommendation'}
+            </button>
+            <button className="btn btn-secondary" onClick={onOverride} disabled={resolved}>
+              Override
+            </button>
+          </>
+        )}
       </div>
     </>
   );
