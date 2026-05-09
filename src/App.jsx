@@ -2,6 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { claims, initialAuditLog, routingGroups, FALLBACK_LG, FALLBACK_SM } from './data.js';
 
 const AGENT_NAME = 'Sarah Chen';
+const AGENT_ROLE = 'Claims Agent';
+
+function initials(name) {
+  return name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+}
 
 function ImgWithFallback({ src, fallback, className, alt = '' }) {
   const onError = (e) => {
@@ -23,6 +28,17 @@ function formatTimestamp(d = new Date()) {
 
 function modelOutputFor(claim) {
   return `Severity: ${claim.severity}, $${claim.repairLow.toLocaleString()}-$${claim.repairHigh.toLocaleString()}`;
+}
+
+function UserIdentity() {
+  return (
+    <div className="user-identity">
+      <div className="avatar" aria-hidden="true">{initials(AGENT_NAME)}</div>
+      <span className="user-name">
+        {AGENT_NAME} <span className="user-sep">·</span> <span className="user-role">{AGENT_ROLE}</span>
+      </span>
+    </div>
+  );
 }
 
 function Sidebar({ selectedId, resolvedClaims, onSelect }) {
@@ -123,10 +139,15 @@ function ClaimDetail({ claim, resolved, confirmation, onAccept, onOverride, onVi
 
       <div className={`banner ${bannerCls}`}>
         <span className={`dot ${bannerCls}`} />
-        <span>
-          <span className="banner-title">{claim.bannerTitle}:</span>{' '}
-          <span className="banner-rationale">{claim.rationale}</span>
-        </span>
+        <div className="banner-body">
+          <div>
+            <span className="banner-title">{claim.bannerTitle}:</span>{' '}
+            <span className="banner-rationale">{claim.rationale}</span>
+          </div>
+          {claim.secondaryRationale && (
+            <div className="banner-secondary">{claim.secondaryRationale}</div>
+          )}
+        </div>
       </div>
 
       {confirmation && (
@@ -141,13 +162,24 @@ function ClaimDetail({ claim, resolved, confirmation, onAccept, onOverride, onVi
         <div>
           <ImgWithFallback src={claim.photo} fallback={FALLBACK_LG} className="photo-main" />
           <div className="photo-thumbs">
-            {claim.thumbs.map((t, i) => (
-              <ImgWithFallback key={i} src={t} fallback={FALLBACK_SM} className="photo-thumb" />
-            ))}
+            {Array.from({ length: claim.expectedAngles ?? claim.thumbs.length }).map((_, i) => {
+              const t = claim.thumbs[i];
+              if (t) {
+                return <ImgWithFallback key={i} src={t} fallback={FALLBACK_SM} className="photo-thumb" />;
+              }
+              return (
+                <div key={i} className="photo-thumb missing">
+                  <span>Angle not provided</span>
+                </div>
+              );
+            })}
           </div>
         </div>
         <div className="card">
           <h3 className="card-title">Assessment</h3>
+          <div className="assessment-meta">
+            Generated in 2.4s · Calibrated against 12,847 historical claims · Manual review benchmark: 25–40 min
+          </div>
           <div className="field">
             <div className="field-label">Damage type</div>
             <div className="field-value">{claim.damageType}</div>
@@ -213,7 +245,16 @@ function AuditLogView({ entries }) {
               <td>
                 <span className={`action-pill action-${r.action}`}>{r.action}</span>
               </td>
-              <td style={{ color: 'var(--text-muted)' }}>{r.reason || '—'}</td>
+              <td>
+                {r.reason ? (
+                  <div className="reason-cell">
+                    <div className="reason-primary">{r.reason}</div>
+                    {r.context && <div className="reason-context">{r.context}</div>}
+                  </div>
+                ) : (
+                  <span style={{ color: 'var(--text-muted)' }}>—</span>
+                )}
+              </td>
               <td>{r.agent || '—'}</td>
             </tr>
           ))}
@@ -265,9 +306,14 @@ function OverrideModal({ open, onCancel, onSubmit }) {
             placeholder="Add any relevant details..."
           />
         </div>
+        <div className="modal-note">
+          Adverse overrides escalate to senior adjuster. The system never auto-rejects.
+        </div>
         <div className="modal-actions">
           <button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
-          <button className="btn btn-primary" onClick={() => onSubmit(reason)}>Submit Override</button>
+          <button className="btn btn-primary" onClick={() => onSubmit(reason, context)}>
+            Submit Override
+          </button>
         </div>
       </div>
     </div>
@@ -286,19 +332,22 @@ export default function App() {
   const claim = claims.find((c) => c.id === selectedId);
   const isResolved = resolvedClaims.has(selectedId);
 
+  useEffect(() => () => clearTimeout(confirmationTimer.current), []);
+
   const showConfirmation = (msg) => {
     setConfirmation(msg);
     clearTimeout(confirmationTimer.current);
-    confirmationTimer.current = setTimeout(() => setConfirmation(''), 5000);
+    confirmationTimer.current = setTimeout(() => setConfirmation(''), 4000);
   };
 
-  const recordDecision = (action, reason = '') => {
+  const recordDecision = (action, reason = '', context = '') => {
     const entry = {
       ts: formatTimestamp(),
       id: claim.id,
       output: modelOutputFor(claim),
       action,
       reason,
+      context,
       agent: AGENT_NAME,
     };
     setAuditEntries((prev) => [entry, ...prev]);
@@ -314,6 +363,7 @@ export default function App() {
     setSelectedId(id);
     setView('dashboard');
     setConfirmation('');
+    clearTimeout(confirmationTimer.current);
   };
 
   return (
@@ -325,21 +375,24 @@ export default function App() {
       />
       <main className="main">
         <div className="main-toolbar">
-          <button
-            className={`tab${view === 'dashboard' ? ' active' : ''}`}
-            onClick={() => setView('dashboard')}
-          >
-            Claim Detail
-          </button>
-          <button
-            className={`tab${view === 'audit' ? ' active' : ''}`}
-            onClick={() => setView('audit')}
-          >
-            Audit Log
-            {auditEntries.length !== initialAuditLog.length && (
-              <span className="tab-badge">{auditEntries.length - initialAuditLog.length}</span>
-            )}
-          </button>
+          <div className="toolbar-tabs">
+            <button
+              className={`tab${view === 'dashboard' ? ' active' : ''}`}
+              onClick={() => setView('dashboard')}
+            >
+              Claim Detail
+            </button>
+            <button
+              className={`tab${view === 'audit' ? ' active' : ''}`}
+              onClick={() => setView('audit')}
+            >
+              Audit Log
+              {auditEntries.length !== initialAuditLog.length && (
+                <span className="tab-badge">{auditEntries.length - initialAuditLog.length}</span>
+              )}
+            </button>
+          </div>
+          <UserIdentity />
         </div>
         <div className="main-content">
           {view === 'dashboard' ? (
@@ -360,9 +413,9 @@ export default function App() {
       <OverrideModal
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
-        onSubmit={(reason) => {
+        onSubmit={(reason, context) => {
           setModalOpen(false);
-          recordDecision('Overridden', reason);
+          recordDecision('Overridden', reason, context);
         }}
       />
     </div>
